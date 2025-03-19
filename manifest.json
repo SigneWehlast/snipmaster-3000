@@ -7,22 +7,74 @@
     "background_color": "#ffffff",
     "theme_color": "#3498db",
     "icons": [
-    {
-    "src": "img/192.png",
-    "sizes": "192x192",
-    "type": "image/png"
-    },
-    {
-    "src": "img/512.png",
-    "sizes": "512x512",
-    "type": "image/png"
-    },
-    {
-    "src": "img/512.png",
-    "sizes": "512x512",
-    "type": "image/png",
-    "purpose": "maskable"
-    }
+        {
+            "src": "img/SnipMaster3000-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "img/SnipMaster3000-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "img/SnipMaster3000-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "New Snippet",
+            "short_name": "New",
+            "description": "Create a new code snippet",
+            "url": "/index.html?new=true",
+            "icons": [
+                {
+                    "src": "img/SnipMaster3000-96.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Recent Snippets",
+            "short_name": "Recent",
+            "description": "View your recent snippets",
+            "url": "/index.html?filter=recent"
+        }
+    ],
+    "file_handlers": [
+        {
+            "action": "/",
+            "accept": {
+                "text/*": [
+                    ".txt",
+                    ".js",
+                    ".html",
+                    ".css",
+                    ".json",
+                    ".md"
+                ]
+            }
+        }
+    ],
+    "protocol_handlers": [
+        {
+            "protocol": "web+snippet",
+            "url": "/index.html?snippet=%s"
+        }
+    ],
+    "categories": [
+        "productivity",
+        "development",
+        "utilities"
+    ],
+    "screenshots": [
+        {
+            "src": "screenshots/screenshot1.png",
+            "sizes": "1280x720",
+            "type": "image/png"
+        }
     ]
-   }
-   
+}
