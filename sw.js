@@ -12,6 +12,8 @@ const APP_SHELL = [
   '/styles/main.css',
   '/scripts/app.js',
   '/offline.html',
+  '/scripts/js/storage.js',
+  '/scripts/js/ui.js'
 ];
 
 // Install event - cache app shell

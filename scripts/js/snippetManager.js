@@ -1,17 +1,3 @@
-/**
- * Snippet Management Module
- * 
- * This module handles all operations related to code snippets:
- * - Creating new snippets
- * - Loading existing snippets
- * - Updating snippets
- * - Deleting snippets
- * - Displaying the snippet list
- * - Managing snippet categories
- * 
- * It uses localStorage for persistent storage of snippets.
- */
-
 export class SnippetManager {
     constructor() {
         this.currentSnippetId = null;
@@ -20,10 +6,6 @@ export class SnippetManager {
         this.categorySelect = this.initializeCategorySelect();
     }
 
-    /**
-     * Initializes the category selection dropdown
-     * @returns {HTMLElement} The category select element
-     */
     initializeCategorySelect() {
         const categories = ['General', 'Utils', 'Components', 'Scripts'];
         const categorySelect = document.createElement('select');
@@ -34,10 +16,6 @@ export class SnippetManager {
         return categorySelect;
     }
 
-    /**
-     * Saves the current snippet to localStorage
-     * Creates a new snippet if none exists, updates existing one if editing
-     */
     saveSnippet() {
         const snippets = JSON.parse(localStorage.getItem('snippets') || '[]');
 
@@ -66,10 +44,6 @@ export class SnippetManager {
         this.showMessage('Snippet saved!');
     }
 
-    /**
-     * Loads a snippet into the editor for editing
-     * @param {string} id - The ID of the snippet to load
-     */
     loadSnippet(id) {
         const snippets = JSON.parse(localStorage.getItem('snippets') || '[]');
         const snippet = snippets.find(s => s.id === id);
@@ -83,9 +57,6 @@ export class SnippetManager {
         }
     }
 
-    /**
-     * Displays all snippets in the sidebar
-     */
     displaySnippets() {
         const snippets = JSON.parse(localStorage.getItem('snippets') || '[]');
         const snippetList = document.getElementById('snippetList');
@@ -112,10 +83,6 @@ export class SnippetManager {
 
         this.attachSnippetEventListeners();
     }
-
-    /**
-     * Attaches event listeners to snippet items
-     */
     attachSnippetEventListeners() {
         const snippetList = document.getElementById('snippetList');
         
@@ -135,10 +102,6 @@ export class SnippetManager {
         });
     }
 
-    /**
-     * Deletes a snippet from storage
-     * @param {string} id - The ID of the snippet to delete
-     */
     deleteSnippet(id) {
         if (confirm('Are you sure you want to delete this snippet?')) {
             let snippets = JSON.parse(localStorage.getItem('snippets') || '[]');
@@ -156,10 +119,6 @@ export class SnippetManager {
         }
     }
 
-    /**
-     * Shows a temporary status message
-     * @param {string} text - The message to display
-     */
     showMessage(text) {
         const message = document.createElement('div');
         message.className = 'status-message';
@@ -170,19 +129,12 @@ export class SnippetManager {
         }, 2000);
     }
 
-    /**
-     * Highlights the currently selected snippet in the list
-     * @param {string} id - The ID of the snippet to highlight
-     */
     highlightSelectedSnippet(id) {
         document.querySelectorAll('.snippet-item').forEach(item => {
             item.classList.toggle('selected', item.dataset.id === id);
         });
     }
 
-    /**
-     * Creates a new empty snippet
-     */
     createNewSnippet() {
         this.currentSnippetId = null;
         this.codeEditor.value = '';

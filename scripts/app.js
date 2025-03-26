@@ -19,8 +19,22 @@ import { ProtocolHandler } from './js/protocolHandler.js';
 // Initialize service worker for offline functionality
 registerServiceWorker();
 
+
+
 // Initialize app when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async function () {
+
+    try {
+        // First migrate data from localStorage to IndexedDB
+        await SnippetStorage.migrateFromLocalStorage();
+
+        // Then initialize the UI
+        await SnippetUI.init();
+
+        console.log('SnipMaster 3000 initialized successfully');
+    } catch (error) {
+        console.error('Error initializing application:', error);
+    }
     // Get DOM elements
     const codeEditor = document.getElementById('codeEditor');
     const languageSelect = document.getElementById('languageSelect');
@@ -41,4 +55,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial display of snippets
     snippetManager.displaySnippets();
-}); 
+});
+
