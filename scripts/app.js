@@ -1,12 +1,3 @@
-/**
- * Main Application Entry Point
- * 
- * This file serves as the main entry point for the SnipMaster 3000 application.
- * It initializes all the necessary modules and sets up the core event listeners.
- * The application is structured in a modular way, with each module handling a specific
- * aspect of the application's functionality.
- */
-
 // Import all modules
 import { registerServiceWorker } from './js/serviceWorker.js';
 import { SnippetManager } from './js/snippetManager.js';
@@ -16,25 +7,28 @@ import { PWAInstallation } from './js/pwaInstall.js';
 import { FileHandler } from './js/fileHandler.js';
 import { ProtocolHandler } from './js/protocolHandler.js';
 
-// Initialize service worker for offline functionality
-registerServiceWorker();
-
-
-
-// Initialize app when DOM is loaded
+// Initialize the application when the DOM is loaded
 document.addEventListener('DOMContentLoaded', async function () {
-
     try {
         // First migrate data from localStorage to IndexedDB
         await SnippetStorage.migrateFromLocalStorage();
 
         // Then initialize the UI
-        await SnippetUI.init();
+await SnippetUI.init();
+SyncUI.init();
 
         console.log('SnipMaster 3000 initialized successfully');
     } catch (error) {
         console.error('Error initializing application:', error);
     }
+});
+
+
+// Call the registration function
+registerServiceWorker();
+
+// Initialize app when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
     // Get DOM elements
     const codeEditor = document.getElementById('codeEditor');
     const languageSelect = document.getElementById('languageSelect');
@@ -55,5 +49,4 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Initial display of snippets
     snippetManager.displaySnippets();
-});
-
+}); 
