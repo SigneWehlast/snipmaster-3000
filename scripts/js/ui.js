@@ -113,7 +113,7 @@ const SnippetUI = {
         });
 
         // Delete button click
-        this.elements.snippetList.querySelectorAll('.deletebtn').forEach(btn => {
+        this.elements.snippetList.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const id = btn.dataset.id;
