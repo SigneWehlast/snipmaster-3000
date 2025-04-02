@@ -46,15 +46,20 @@
     ],
     "file_handlers": [
         {
-            "action": "/",
+            "action": "/index.html",
             "accept": {
-                "text/*": [
-                    ".txt",
-                    ".js",
+                "text/javascript": [
+                    ".js"
+                ],
+                "text/html": [
                     ".html",
-                    ".css",
-                    ".json",
-                    ".md"
+                    ".htm"
+                ],
+                "text/css": [
+                    ".css"
+                ],
+                "text/plain": [
+                    ".txt"
                 ]
             }
         }

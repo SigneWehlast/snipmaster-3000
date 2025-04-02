@@ -224,3 +224,54 @@ const SnippetUI = {
         }
     }
 };
+
+function initFileHandlers() {
+    // Check if the module is available
+    if (!window.FileSystem) {
+        console.error('FileSystem module not loaded');
+        return;
+    }
+
+    // Get button
+    const loadFileBtn = document.getElementById('loadFileBtn');
+    if (loadFileBtn) {
+        loadFileBtn.addEventListener('click', handleLoadFile);
+    }
+
+    // Show/hide button based on browser support
+    if (!FileSystem.isSupported) {
+        loadFileBtn.classList.add('disabled');
+        loadFileBtn.title = 'Not supported in this browser';
+    }
+}
+// Handler for load file button
+function handleLoadFile() {
+        FileSystem.loadFromFile({
+            onSuccess: (fileData) => {
+                const codeEditor = document.getElementById('codeEditor');
+                const languageSelect = document.getElementById('languageSelect');
+    
+                if (codeEditor && languageSelect) {
+                    document.getElementById('newSnippetBtn').click();
+                    codeEditor.value = fileData.content;
+    
+                    if (Array.from(languageSelect.options).some(opt => opt.value === fileData.language)) {
+                        languageSelect.value = fileData.language;
+                    }
+    
+                    if (typeof updatePreview === 'function') {
+                        updatePreview();
+                    }
+    
+                    // Kald showMessage korrekt
+                    SnippetUI.showMessage(`Loaded ${fileData.name} successfully!`);
+                }
+            },
+            onError: (error) => {
+                SnippetUI.showMessage(`Error: ${error}`, true);
+            }
+        });
+    }
+    
+    // Call during initialization
+    document.addEventListener('DOMContentLoaded', initFileHandlers);
