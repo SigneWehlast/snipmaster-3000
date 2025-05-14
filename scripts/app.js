@@ -6,6 +6,7 @@ import { ConnectionStatus } from './js/connectionStatus.js';
 import { PWAInstallation } from './js/pwaInstall.js';
 import { FileHandler } from './js/fileHandler.js';
 import { ProtocolHandler } from './js/protocolHandler.js';
+import { FileSystem } from './js/file-system.js';
 
 // Initialiser snippetManager udenfor DOMContentLoaded
 let snippetManager;
@@ -54,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const languageSelect = document.getElementById('languageSelect');
         const saveBtn = document.getElementById('saveBtn');
         const newSnippetBtn = document.getElementById('newSnippetBtn');
+        const saveFileBtn = document.getElementById('saveFileBtn'); // Added this line
 
         // Initialiser managers og handlers
         snippetManager = new SnippetManager();  // Initialize global snippetManager
@@ -78,6 +80,14 @@ document.addEventListener('DOMContentLoaded', async function () {
             });
         }
 
+        // Event listener for saveFileBtn (save to file)
+        if (saveFileBtn) {
+            saveFileBtn.addEventListener('click', () => {
+                console.log('Save file button clicked');
+                handleSaveFile();  // Call handleSaveFile() here
+            });
+        }
+
         // Initial visning af snippets
         snippetManager.displaySnippets();
 
@@ -86,6 +96,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 });
 
+// handleSaveFile function
 function handleSaveFile() {
     const codeEditor = document.getElementById('codeEditor');
     const languageSelect = document.getElementById('languageSelect');
@@ -146,6 +157,7 @@ function handleSaveFile() {
     }
 }
 
+// Your existing saveSnippet function
 function saveSnippet() {
     // Your existing save code
 
@@ -161,6 +173,7 @@ function saveSnippet() {
         }
     );
 }
+
 // Helper function to get snippet name
 function getCurrentSnippetName() {
     if (!currentSnippetId) return null;
@@ -168,8 +181,7 @@ function getCurrentSnippetName() {
     const snippets = JSON.parse(localStorage.getItem('snippets') || '[]');
     const currentSnippet = snippets.find(s => s.id === currentSnippetId);
 
-    return currentSnippet ? (currentSnippet.name || `Snippet
-   ${currentSnippet.language}`) : null;
+    return currentSnippet ? (currentSnippet.name || `Snippet ${currentSnippet.language}`) : null;
 }
 
 function displaySnippets() {
@@ -201,6 +213,7 @@ function displaySnippets() {
         }
     });
 }
+
 // Function to set reminder
 function setReminderForSnippet(snippetId) {
     // Find snippet details
@@ -279,6 +292,7 @@ function registerAppShortcuts() {
         }
     });
 }
+
 // Call during initialization
 document.addEventListener('DOMContentLoaded', () => {
     // Register app-specific shortcuts

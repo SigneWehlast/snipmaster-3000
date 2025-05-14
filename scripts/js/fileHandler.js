@@ -23,19 +23,17 @@ export class FileHandler {
      * Configures the launch queue for handling files opened with the app
      */
     setupFileHandling() {
-        if ('launchQueue' in window && 'files' in LaunchParams.prototype) {
+        if ('launchQueue' in window) {
             window.launchQueue.setConsumer(async (launchParams) => {
-                if (!launchParams.files.length) {
+                if (!Array.isArray(launchParams.files) || launchParams.files.length === 0) {
                     return;
                 }
 
-                // Handle each file
                 for (const fileHandle of launchParams.files) {
                     try {
                         const file = await fileHandle.getFile();
                         const content = await file.text();
 
-                        // Create a new snippet from the file
                         this.createSnippetFromFile({
                             name: file.name,
                             language: this.detectLanguage(file.name),
@@ -93,14 +91,15 @@ export class FileHandler {
         if (codeEditor && languageSelect) {
             codeEditor.value = code;
 
-            if (Array.from(languageSelect.options).some(opt => opt.value === language)) {
-                languageSelect.value = language;
+            const isSupported = Array.from(languageSelect.options).some(opt => opt.value === language);
+            languageSelect.value = isSupported ? language : 'plaintext';
+
+            if (!isSupported) {
+                this.showMessage(`⚠️ Language "${language}" not in dropdown. Defaulted to plaintext.`);
             }
 
-            // Update preview using the CodePreview instance
             this.codePreview.updatePreview();
-
-            this.showMessage(`Opened file: ${name}`);
+            this.showMessage(`📂 Opened file: ${name}`);
         }
     }
 
@@ -113,9 +112,7 @@ export class FileHandler {
         message.className = 'status-message';
         message.textContent = text;
         document.body.appendChild(message);
-        setTimeout(() => {
-            message.remove();
-        }, 2000);
+        setTimeout(() => message.remove(), 2000);
     }
 
     /**
@@ -123,6 +120,10 @@ export class FileHandler {
      * @param {string} message - The error message to display
      */
     showError(message) {
-        this.showMessage(message);
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'status-message error';
+        errorMsg.textContent = message;
+        document.body.appendChild(errorMsg);
+        setTimeout(() => errorMsg.remove(), 3000);
     }
-} 
+}
