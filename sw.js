@@ -1,11 +1,11 @@
-// sw.js - Service Worker for SnipMaster 3000
-
-// Cache names with version identifiers
+//bruges til at gemme statiske filer i appen. Offline adgang til appens filer
 const STATIC_CACHE = 'snipmaster-static-v1';
+//dynamisk cachelagring. Bruges til sider der ikke installeres
 const DYNAMIC_CACHE = 'snipmaster-dynamic-v1';
+//bruges til at gemme snippets
 const SNIPPETS_CACHE = 'snipmaster-snippets-v1';
 
-// Files to cache initially (app shell)
+//liste over filer, som skal køres ved installation. De skal kunne køre offline
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -16,7 +16,7 @@ const APP_SHELL = [
   '/scripts/js/ui.js',
 ];
 
-// Install event - cache app shell
+// når service workeren installeres, caches filerne
 self.addEventListener('install', event => {
   console.log('Service Worker: Installing...');
   event.waitUntil(
@@ -32,7 +32,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate event - clean up old caches
+// rydder de gamle caches
 self.addEventListener('activate', event => {
   console.log('Service Worker: Activating...');
   const currentCaches = [STATIC_CACHE, DYNAMIC_CACHE, SNIPPETS_CACHE];
@@ -40,16 +40,15 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
       .then(cacheNames => {
-        return cacheNames.filter(cacheName =>
-          cacheName.startsWith('snipmaster-') && !currentCaches.includes(cacheName)
-        );
-      })
-      .then(cachesToDelete => {
         return Promise.all(
-          cachesToDelete.map(cacheToDelete => {
-            console.log('Service Worker: Deleting old cache', cacheToDelete);
-            return caches.delete(cacheToDelete);
-          })
+          cacheNames
+            .filter(cacheName =>
+              cacheName.startsWith('snipmaster-') && !currentCaches.includes(cacheName)
+            )
+            .map(cacheToDelete => {
+              console.log('Service Worker: Deleting old cache', cacheToDelete);
+              return caches.delete(cacheToDelete);
+            })
         );
       })
       .then(() => {
@@ -59,82 +58,67 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch event - will be implemented in next steps
-self.addEventListener('fetch', event => {
-  // We'll implement our strategies here
+// Fetch event - route based on type
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // hvis URL'en starter med api eller indeholder snippets skal den køre staleWhile...
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.pathname.includes('snippets') ||
+    event.request.headers.get('accept')?.includes('application/json')
+  ) {
+    event.respondWith(staleWhileRevalidate(event));
+    return;
+  }
+
+  // hvis der navigeres til index.html skal den kører networkFirst
+  if (event.request.mode === 'navigate') {
+    event.respondWith(networkFirst(event));
+    return;
+  }
+
+  // hvis anmodningen er efter statiske filer, så køres cacheFirst
+  if (
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.css') ||
+    url.pathname.endsWith('.png') ||
+    url.pathname.endsWith('.jpg') ||
+    url.pathname.endsWith('.svg') ||
+    url.pathname.endsWith('.ico')
+  ) {
+    event.respondWith(cacheFirst(event));
+    return;
+  }
+
+  // hvis ingen af ovenstående, så kører networkFirst.
+  event.respondWith(networkFirst(event));
 });
 
-
-// Cache-first strategy for static assets
+// returnerer cache, hvis de findes, ellers caches de i dynamic_cache
 function cacheFirst(event) {
-  return caches.match(event.request)
-    .then(cachedResponse => {
-      // Return cached response if found
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      self.addEventListener('fetch', (event) => {
-        const url = new URL(event.request.url);
-
-        // Handle different URLs with different strategies
-
-        // 1. For API requests (if your app has them)
-        if (url.pathname.startsWith('/api/')) {
-          event.respondWith(networkFirst(event));
-          return;
-        }
-
-        // 2. For snippet data
-        if (
-          url.pathname.includes('snippets') ||
-          event.request.headers.get('accept').includes('application/json')
-        ) {
-          event.respondWith(staleWhileRevalidate(event));
-          return;
-        }
-
-        // 3. For page navigation requests
-        if (event.request.mode === 'navigate') {
-          event.respondWith(networkFirst(event));
-          return;
-        }
-
-        // 4. For static assets (JS, CSS, images, etc.)
-        if (
-          url.pathname.endsWith('.js') ||
-          url.pathname.endsWith('.css') ||
-          url.pathname.endsWith('.png') ||
-          url.pathname.endsWith('.jpg') ||
-          url.pathname.endsWith('.svg') ||
-          url.pathname.endsWith('.ico')
-        ) {
-          event.respondWith(cacheFirst(event));
-          return;
-        }
-
-        // 5. Default strategy for everything else
-        event.respondWith(networkFirst(event));
+  return caches.match(event.request).then(cachedResponse => {
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    return fetch(event.request).then(networkResponse => {
+      return caches.open(DYNAMIC_CACHE).then(cache => {
+        cache.put(event.request, networkResponse.clone());
+        return networkResponse;
       });
-
     });
+  });
 }
 
-// Add this to your sw.js file
-
-// Network-first strategy for dynamic content
+// tjekker om der er net, hvis der ikke er returneret cache eller vises offline-siden
 function networkFirst(event) {
   return fetch(event.request)
     .then(networkResponse => {
-      // Check if we received a valid response
       if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
         return networkResponse;
       }
 
-      // Clone the response
       const responseToCache = networkResponse.clone();
-
-      // Add to dynamic cache
       caches.open(DYNAMIC_CACHE).then(cache => {
         cache.put(event.request, responseToCache);
       });
@@ -142,56 +126,69 @@ function networkFirst(event) {
       return networkResponse;
     })
     .catch(() => {
-      // If network fails, try the cache
       return caches.match(event.request).then(cachedResponse => {
-        // If found in cache, return it
         if (cachedResponse) {
           return cachedResponse;
         }
-
-        // For HTML requests, return the offline page
-        if (event.request.headers.get('accept').includes('text/html')) {
+        if (event.request.headers.get('accept')?.includes('text/html')) {
           return caches.match('/offline.html');
         }
-
-        // For other requests, we'll just have to fail
-        // You could return fallback images, etc. here
       });
     });
 }
 
-// Add this to your sw.js file
-// Stale-while-revalidate for user snippets
-
+// returnerer cache med det samme, og opdaterer i baggrunden med nyeste data
 function staleWhileRevalidate(event) {
-  return caches.open(SNIPPETS_CACHE).then((cache) => {
-    return cache.match(event.request).then((cachedResponse) => {
-      // Create a promise for updating the cache
+  return caches.open(SNIPPETS_CACHE).then(cache => {
+    return cache.match(event.request).then(cachedResponse => {
       const fetchPromise = fetch(event.request)
-        .then((networkResponse) => {
+        .then(networkResponse => {
           cache.put(event.request, networkResponse.clone());
           return networkResponse;
         })
-        .catch((error) => {
-          console.error("Failed to update cache:", error);
-          // We still return null here to fall back to cached response
+        .catch(error => {
+          console.error('Failed to update cache:', error);
           return null;
         });
 
-      // Return the cached response immediately or wait for the network response
       return cachedResponse || fetchPromise;
     });
   });
 }
 
-// Add this listener for background sync
+// Background sync
 self.addEventListener('sync', event => {
   if (event.tag === 'sync-snippets') {
     console.log('Background sync triggered');
     event.waitUntil(syncSnippets());
   }
 });
-// Sync function
+
+// Notification click handler
+self.addEventListener('notificationclick', event => {
+  const notification = event.notification;
+  const action = event.action;
+
+  console.log('Notification clicked:', action);
+  notification.close();
+
+  if (action === 'view') {
+    event.waitUntil(
+      clients.matchAll({ type: 'window' }).then(clientList => {
+        for (const client of clientList) {
+          if (client.url === '/' && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        if (clients.openWindow) {
+          return clients.openWindow('/');
+        }
+      })
+    );
+  }
+});
+
+// Background sync logic
 async function syncSnippets() {
   try {
     const snippetsToSync = await getSnippetsToSync();
@@ -200,31 +197,26 @@ async function syncSnippets() {
       return;
     }
 
-    console.log(`Syncing ${snippetsToSync.length} snippets in
-background`);
+    console.log(`Syncing ${snippetsToSync.length} snippets in background`);
 
     for (const snippet of snippetsToSync) {
       try {
         await syncSnippet(snippet);
         await markSnippetSynced(snippet.id);
       } catch (error) {
-        console.error(`Failed to sync snippet ${snippet.id}:`,
-          error);
-        // Let the sync process continue with other snippets
+        console.error(`Failed to sync snippet ${snippet.id}:`, error);
       }
     }
 
     console.log('Background sync completed');
-
   } catch (error) {
     console.error('Background sync failed:', error);
-    // Rethrow to allow the system to retry later
     throw error;
   }
 }
-// Helper functions - using IndexedDB from service worker
+
+// IndexedDB helpers
 async function getSnippetsToSync() {
-  // Access IndexedDB directly from service worker
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('SnipMasterDB', 1);
 
@@ -234,22 +226,16 @@ async function getSnippetsToSync() {
       const db = event.target.result;
       const transaction = db.transaction('snippets', 'readonly');
       const store = transaction.objectStore('snippets');
-
-      // Get all snippets with pending sync status
       const index = store.index('by-sync-status');
       const query = index.getAll('pending');
 
-      query.onsuccess = () => {
-        resolve(query.result);
-      };
-
+      query.onsuccess = () => resolve(query.result);
       query.onerror = reject;
     };
   });
 }
-async function syncSnippet(snippet) {
-  // Mock server sync - in a real app, this would be an API call
 
+async function syncSnippet(snippet) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       if (Math.random() < 0.9) {
@@ -260,6 +246,7 @@ async function syncSnippet(snippet) {
     }, 500);
   });
 }
+
 async function markSnippetSynced(id) {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('SnipMasterDB', 1);
@@ -280,7 +267,7 @@ async function markSnippetSynced(id) {
           updateRequest.onsuccess = () => resolve();
           updateRequest.onerror = reject;
         } else {
-          resolve(); // Snippet not found, nothing to do
+          resolve();
         }
       };
 
@@ -288,30 +275,3 @@ async function markSnippetSynced(id) {
     };
   });
 }
-
-self.addEventListener('notificationclick', event => {
-  const notification = event.notification;
-  const action = event.action;
-
-  console.log('Notification clicked:', action);
-  notification.close();
-
-  if (action === 'view') {
-    // Open window and focus it
-    event.waitUntil(
-      clients.matchAll({ type: 'window' }).then(clientList => {
-        // Check if there's already a window/tab open with the target URL
-        for (const client of clientList) {
-          if (client.url === '/' && 'focus' in client) {
-            return client.focus();
-          }
-        }
-
-        // If no window/tab is open, open one
-        if (clients.openWindow) {
-          return clients.openWindow('/');
-        }
-      })
-    );
-  }
-});

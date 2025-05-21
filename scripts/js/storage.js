@@ -106,16 +106,52 @@ const SnippetStorage = {
 
     // Delete a snippet
     delete: async function (id) {
-        const db = await this.openDB();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction(this.dbConfig.storeName, 'readwrite');
-            const store = transaction.objectStore(this.dbConfig.storeName);
-            const request = store.delete(id);
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(this.dbConfig.storeName, 'readwrite');
+        const store = transaction.objectStore(this.dbConfig.storeName);
+        const request = store.delete(id);
 
-            request.onsuccess = () => resolve(true);
-            request.onerror = () => reject(request.error);
-        });
-    },
+        request.onsuccess = async () => {
+            console.log(`Snippet ${id} deleted from IndexedDB`);
+
+            // Opdater localStorage 'snippets' array - fjern slettet snippet
+            try {
+                let snippets = JSON.parse(localStorage.getItem('snippets') || '[]');
+                snippets = snippets.filter(snip => snip.id !== id);
+                localStorage.setItem('snippets', JSON.stringify(snippets));
+                console.log('localStorage snippets updated');
+
+                // Opdater UI med ny snippet liste - du skal implementere denne funktion
+                if (typeof this.renderSnippetList === 'function') {
+                    this.renderSnippetList(snippets);
+                }
+            } catch (e) {
+                console.warn('Failed to update localStorage snippets:', e);
+            }
+
+            // Slet alle cache entries (som før)
+            try {
+                const cache = await caches.open('snipmaster-snippets-v1');
+                const requests = await cache.keys();
+                await Promise.all(requests.map(req => cache.delete(req)));
+                console.log('All cache entries deleted');
+            } catch (cacheError) {
+                console.warn('Cache delete failed:', cacheError);
+            }
+
+            resolve(true);
+        };
+
+        request.onerror = () => {
+            console.error('IndexedDB delete failed:', request.error);
+            reject(request.error);
+        };
+    });
+},
+
+
+
 
     // Get snippets by language
     getByLanguage: async function (language) {

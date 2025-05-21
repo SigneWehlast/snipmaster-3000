@@ -227,7 +227,7 @@ body {
     border-radius: 5px;
 }
 
-.sw-status {
+#sw-status {
     position: fixed;
     bottom: 20px;
     left: 20px;
@@ -239,11 +239,11 @@ body {
     z-index: 1000;
 }
 
-.sw-status.success {
+.sw-status-success {
     background-color: #2ecc71;
 }
 
-.sw-status.error {
+.sw-status-error {
     background-color: #e74c3c;
 }
 

@@ -1,16 +1,12 @@
-/**
- * Service Worker Registration Module
- * 
- * This module handles the registration and management of the service worker,
- * which enables offline functionality and caching for the application.
- * It also provides visual feedback about the service worker's status to the user.
- */
-
-// Service Worker Registration
+//Hjælpe-fil sw.js, som registrer service workeren
 export function registerServiceWorker() {
+    //tjekker om browseren understøtter service workers
     if ('serviceWorker' in navigator) {
+        //registrer service workeren, når hele siden er loadet
         window.addEventListener('load', () => {
+            //registrerer sw.js
             navigator.serviceWorker.register('/sw.js')
+            //printer showServiceWorkerStatus, hvis den er successful
                 .then(registration => {
                     console.log('ServiceWorker registration successful with scope:', registration.scope);
                     showServiceWorkerStatus('Service Worker registered successfully!');
@@ -26,14 +22,11 @@ export function registerServiceWorker() {
     }
 }
 
-/**
- * Displays a status message about the service worker's state
- * @param {string} message - The message to display
- * @param {boolean} isError - Whether the message is an error
- */
 function showServiceWorkerStatus(message, isError = false) {
+
     let statusElement = document.getElementById('sw-status');
     if (!statusElement) {
+        //opretter et element med classen, hvor den printer sw status
         statusElement = document.createElement('div');
         statusElement.id = 'sw-status';
         document.body.appendChild(statusElement);
