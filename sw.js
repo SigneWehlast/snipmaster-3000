@@ -20,9 +20,11 @@ const APP_SHELL = [
 self.addEventListener('install', event => {
   console.log('Service Worker: Installing...');
   event.waitUntil(
+    //åbner statiske cache
     caches.open(STATIC_CACHE)
       .then(cache => {
         console.log('Service Worker: Caching App Shell');
+        //lægger de statiske cache i APP_SHELL
         return cache.addAll(APP_SHELL);
       })
       .then(() => {
@@ -191,6 +193,7 @@ self.addEventListener('notificationclick', event => {
 // Background sync logic
 async function syncSnippets() {
   try {
+    //henter snippets fra IndexedDB
     const snippetsToSync = await getSnippetsToSync();
     if (snippetsToSync.length === 0) {
       console.log('No snippets to sync');
@@ -199,6 +202,7 @@ async function syncSnippets() {
 
     console.log(`Syncing ${snippetsToSync.length} snippets in background`);
 
+    //hvis der er snippets synkroniseres de
     for (const snippet of snippetsToSync) {
       try {
         await syncSnippet(snippet);
@@ -216,6 +220,7 @@ async function syncSnippets() {
 }
 
 // IndexedDB helpers
+//returnerer de snippets der ikke er blevet synced endnu
 async function getSnippetsToSync() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('SnipMasterDB', 1);
@@ -235,6 +240,7 @@ async function getSnippetsToSync() {
   });
 }
 
+//en test funktion, som tester om ens app kan håndtere usikre netværksforbindelser
 async function syncSnippet(snippet) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -255,12 +261,16 @@ async function markSnippetSynced(id) {
 
     request.onsuccess = event => {
       const db = event.target.result;
+      //gør så vi kan både læse og skrive i databasen
       const transaction = db.transaction('snippets', 'readwrite');
       const store = transaction.objectStore('snippets');
 
+      //finder en snippet med det id, der skal findes
       const getRequest = store.get(id);
+      //snippet gemmes
       getRequest.onsuccess = () => {
         const snippet = getRequest.result;
+        //hvis en fineds sættes status til synced
         if (snippet) {
           snippet.syncStatus = 'synced';
           const updateRequest = store.put(snippet);

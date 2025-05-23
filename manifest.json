@@ -41,7 +41,13 @@
             "name": "Recent Snippets",
             "short_name": "Recent",
             "description": "View your recent snippets",
-            "url": "/index.html?filter=recent"
+            "url": "/index.html?filter=recent",
+             "icons": [
+                {
+                    "src": "img/SnipMaster3000-96.png",
+                    "sizes": "96x96"
+                }
+            ]
         }
     ],
     "file_handlers": [
