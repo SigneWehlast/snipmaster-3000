@@ -1,5 +1,4 @@
 const SyncUI = {
-    // App states
     APP_STATES: {
         ONLINE: 'online',
         OFFLINE: 'offline',
@@ -8,7 +7,6 @@ const SyncUI = {
         SYNC_SUCCESS: 'sync-success'
     },
 
-    // Elements
     elements: {
         statusContainer: null,
         syncButton: null,
@@ -16,25 +14,19 @@ const SyncUI = {
         offlineBanner: null
     },
 
-    // Current app state
     currentState: null,
 
-    // Initialize sync UI
     init: function () {
-        // Set up UI elements
         this.createStatusContainer();
         this.createSyncButton();
         this.createLastSyncTimeDisplay();
         this.createOfflineBanner();
 
-        // Set up event listeners
         this.setupEventListeners();
 
-        // Set initial state
         this.updateAppState(navigator.onLine ? this.APP_STATES.ONLINE : this.APP_STATES.OFFLINE);
     },
 
-    // Create status container
     createStatusContainer: function () {
         let container = document.getElementById('app-status-container');
         if (!container) {
@@ -45,7 +37,6 @@ const SyncUI = {
         this.elements.statusContainer = container;
     },
 
-    // Create sync button
     createSyncButton: function () {
         const header = document.querySelector('.app-header');
         if (!header) return;
@@ -59,13 +50,11 @@ const SyncUI = {
         this.elements.syncButton = syncButton;
     },
 
-    // Create last sync time display
     createLastSyncTimeDisplay: function () {
         const syncTimeElement = document.createElement('div');
         syncTimeElement.id = 'last-sync-time';
         syncTimeElement.className = 'last-sync-time';
 
-        // Add it near your sync button
         const header = document.querySelector('.app-header');
         if (header) {
             header.appendChild(syncTimeElement);
@@ -73,11 +62,9 @@ const SyncUI = {
 
         this.elements.lastSyncTime = syncTimeElement;
 
-        // Initial update
         this.updateLastSyncTimeDisplay();
     },
 
-    // Create offline banner
     createOfflineBanner: function () {
         const banner = document.createElement('div');
         banner.id = 'offline-banner';
@@ -96,40 +83,27 @@ const SyncUI = {
         this.elements.offlineBanner = banner;
     },
 
-    // Set up event listeners
     setupEventListeners: function () {
-        // Network status events
         window.addEventListener('online', this.handlers.onlineStatusChange.bind(this));
         window.addEventListener('offline', this.handlers.offlineStatusChange.bind(this));
 
-        // Sync button click
         if (this.elements.syncButton) {
             this.elements.syncButton.addEventListener('click', this.handlers.syncButtonClick.bind(this));
         }
 
-        // Sync status change event
         document.addEventListener('sync-status-change', this.handlers.syncStatusChange.bind(this));
         
-        // Last sync time update
         document.addEventListener('last-sync-updated', this.handlers.lastSyncUpdated.bind(this));
     },
 
-    // Update app state
     updateAppState: function (newState, message = '') {
         const statusContainer = this.elements.statusContainer;
         if (!statusContainer) return;
 
-        // Update current state
         this.currentState = newState;
-
-        // Clear previous status
         statusContainer.innerHTML = '';
-
-        // Create new status element
         const statusElement = document.createElement('div');
         statusElement.className = `app-status ${newState}`;
-
-        // Set icon and message based on state
         let icon = '', defaultMessage = '';
 
         switch (newState) {
@@ -160,21 +134,17 @@ const SyncUI = {
             <span class="status-message">${message || defaultMessage}</span>
         `;
 
-        // Add to container
         statusContainer.appendChild(statusElement);
 
-        // If sync success, auto-revert to online after 3 seconds
         if (newState === this.APP_STATES.SYNC_SUCCESS) {
             setTimeout(() => {
                 this.updateAppState(this.APP_STATES.ONLINE);
             }, 3000);
         }
 
-        // Update body class for CSS targeting
         document.body.className = `app-state-${newState}`;
     },
 
-    // Update last sync time display
     updateLastSyncTimeDisplay: function () {
         const timeElement = this.elements.lastSyncTime;
         if (!timeElement) return;
@@ -208,21 +178,18 @@ const SyncUI = {
         }
     },
 
-    // Event handlers
     handlers: {
         onlineStatusChange: function () {
             if (navigator.onLine) {
                 this.updateAppState(this.APP_STATES.ONLINE);
 
-                // Try background sync first
                 SnippetStorage.registerBackgroundSync().then(registered => {
-                    // If background sync is not supported or registration failed, try manual sync
                     if (!registered) {
                         this.handlers.syncButtonClick.call(this);
                     }
                 }).catch(error => {
                     console.error('Background sync failed:', error);
-                    this.handlers.syncButtonClick.call(this); // fallback to manual sync
+                    this.handlers.syncButtonClick.call(this); 
                 });
             }
         },
@@ -239,7 +206,6 @@ const SyncUI = {
             try {
                 const result = await SnippetStorage.syncAll();
 
-                // Refresh snippets display after sync
                 await SnippetUI.renderSnippets();
 
             } catch (error) {

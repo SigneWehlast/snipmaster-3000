@@ -1,5 +1,5 @@
 // Import all modules
-import { registerServiceWorker } from './js/serviceWorker.js';
+import { registerServiceWorker } from './js/serviceWorkerHelper.js';
 import { SnippetManager } from './js/snippetManager.js';
 import { CodePreview } from './js/preview.js';
 import { ConnectionStatus } from './js/connectionStatus.js';
@@ -136,76 +136,6 @@ function handleSaveFile() {
         });
     } else {
         console.error('FileSystem API is not available or not supported.');
-    }
-}
-
-function saveSnippet() {
-    const snippetName = getCurrentSnippetName() || 'Snippet';
-
-    NotificationManager.showNotification(
-        'Snippet Saved',
-        `Your snippet "${snippetName}" has been saved`,
-        {
-            action: 'openSnippet',
-            snippetId: currentSnippetId
-        }
-    );
-}
-
-function getCurrentSnippetName() {
-    if (!currentSnippetId) return null;
-
-    const snippets = JSON.parse(localStorage.getItem('snippets') || '[]');
-    const currentSnippet = snippets.find(s => s.id === currentSnippetId);
-
-    return currentSnippet ? (currentSnippet.name || `Snippet ${currentSnippet.language}`) : null;
-}
-
-function displaySnippets() {
-    document.querySelectorAll('.snippet-item').forEach(item => {
-        if (!item.querySelector('.reminder-btn')) {
-            const reminderBtn = document.createElement('button');
-            reminderBtn.className = 'reminder-btn';
-            reminderBtn.title = 'Set reminder for this snippet';
-            reminderBtn.innerHTML = '<span class="icon">⏰ </span>';
-            reminderBtn.dataset.id = item.dataset.id;
-
-            let actionsSection = item.querySelector('.snippet-actions');
-            if (!actionsSection) {
-                actionsSection = document.createElement('div');
-                actionsSection.className = 'snippet-actions';
-                item.appendChild(actionsSection);
-            }
-
-            actionsSection.appendChild(reminderBtn);
-
-            reminderBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                setReminderForSnippet(item.dataset.id);
-            });
-        }
-    });
-}
-
-function setReminderForSnippet(snippetId) {
-    const snippets = JSON.parse(localStorage.getItem('snippets') || '[]');
-    const snippet = snippets.find(s => s.id === snippetId);
-
-    if (!snippet) {
-        showMessage('Snippet not found', true);
-        return;
-    }
-
-    const minutes = prompt('Set reminder in minutes:', '30');
-
-    if (minutes && !isNaN(minutes)) {
-        const snippetName = snippet.name || `Snippet ${snippet.language}`;
-
-        NotificationManager.scheduleNotification(
-            'Snippet Reminder',
-            `Don't forget to work on "${snippetName}"`,
-            parseInt(minutes)
-        );
     }
 }
 

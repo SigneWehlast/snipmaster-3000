@@ -1,3 +1,5 @@
+//bruges til håndtering af snippets
+
 export class SnippetManager {
     constructor() {
         this.currentSnippetId = null;
@@ -6,6 +8,7 @@ export class SnippetManager {
         this.categorySelect = this.initializeCategorySelect();
     }
 
+    //dropdown med kategorier
     initializeCategorySelect() {
         const categories = ['General', 'Utils', 'Components', 'Scripts'];
         const categorySelect = document.createElement('select');
@@ -16,6 +19,7 @@ export class SnippetManager {
         return categorySelect;
     }
 
+    //gemmer og opdaterer snippets i localstorage
     saveSnippet() {
         const snippets = JSON.parse(localStorage.getItem('snippets') || '[]');
 
@@ -44,6 +48,7 @@ export class SnippetManager {
         this.showMessage('Snippet saved!');
     }
 
+    //finder en snippet ud fra id
     loadSnippet(id) {
         const snippets = JSON.parse(localStorage.getItem('snippets') || '[]');
         const snippet = snippets.find(s => s.id === id);
@@ -57,6 +62,7 @@ export class SnippetManager {
         }
     }
 
+    //kan klikke på snippets i menuen
     displaySnippets() {
         const snippets = JSON.parse(localStorage.getItem('snippets') || '[]');
         const snippetList = document.getElementById('snippetList');
@@ -83,6 +89,8 @@ export class SnippetManager {
 
         this.attachSnippetEventListeners();
     }
+
+    //indlæs og delete click event
     attachSnippetEventListeners() {
         const snippetList = document.getElementById('snippetList');
         
@@ -102,6 +110,7 @@ export class SnippetManager {
         });
     }
 
+    //bekræfter sletning og fjerner snippet fra localstorage
     deleteSnippet(id) {
         if (confirm('Are you sure you want to delete this snippet?')) {
             let snippets = JSON.parse(localStorage.getItem('snippets') || '[]');

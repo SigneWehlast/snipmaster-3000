@@ -1,13 +1,13 @@
-// file-system.js - File System integration for SnipMaster 3000
+//til at åbne eller gemme til filer
 
-// Check if File System Access API is supported
+//tjekker om browseren undertøtter filvælger
 const isFileSystemSupported = 'showOpenFilePicker' in window;
 
-// Export our module functions
+//et objekt med metoder
 export const FileSystem = {
     isSupported: isFileSystemSupported,
 
-    // Function to show support status in UI
+    //tjekker om API understøttes
     checkSupport() {
         if (!this.isSupported) {
             console.warn('File System Access API not supported');
@@ -15,6 +15,7 @@ export const FileSystem = {
         return this.isSupported;
     },
 
+    //åbner en filvælger med typerne nævnt, hvor man kan vælge filer fra ens computer
     async loadFromFile(options = {}) {
         if (!this.checkSupport()) {
             if (options.onError) {
@@ -80,6 +81,7 @@ export const FileSystem = {
         }
     },
 
+    //gemmer indhold til fil
     async saveToFile(options = {}) {
         if (!this.checkSupport()) {
             if (typeof options.onError === 'function') {
@@ -88,6 +90,7 @@ export const FileSystem = {
             return;
         }
 
+        //tjekker om der er indhold, der kan gemmes
         try {
             const content = options.content || '';
             if (!content) {
@@ -139,6 +142,7 @@ export const FileSystem = {
         }
     },
 
+    //tjekker om browseren understøtter drag-in af filer
     initFileHandlers() {
         if ('launchQueue' in window) {
             window.launchQueue.setConsumer(async (launchParams) => {

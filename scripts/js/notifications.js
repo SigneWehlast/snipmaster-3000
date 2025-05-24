@@ -1,37 +1,23 @@
 const NotificationManager = {
-    // Current permission status
     permission: Notification.permission,
-    // Store scheduled notification timers
     scheduledNotifications: [],
-
-    /**
-     * Initialize notifications module
-     */
     init() {
         console.log('Notification Manager initialized');
         console.log('Current permission:', this.permission);
 
-        // Check if notification UI elements exist and set up listeners
         this.setupNotificationUI();
     },
-
-    /**
-     * Set up UI elements for notifications
-     */
     setupNotificationUI() {
-        // Add notification permission request button if needed
         if (this.permission !== 'granted' && this.permission !== 'denied') {
             this.addPermissionButton();
         }
     },
 
+    //der vises en knap til at tillade notifikationer
     addPermissionButton() {
-        // Check if button already exists
         if (document.getElementById('notification-permission-btn')) {
             return;
         }
-
-        // Create permission button
         const permissionBtn = document.createElement('button');
         permissionBtn.id = 'notification-permission-btn';
         permissionBtn.textContent = 'Enable Notifications';
@@ -39,7 +25,6 @@ const NotificationManager = {
         permissionBtn.addEventListener('click', () =>
             this.requestPermission());
 
-        // Add to UI - adjust selector based on your app structure
         const targetElement = document.querySelector('.sidebar-header') ||
             document.querySelector('.app-header');
         if (targetElement) {
@@ -47,22 +32,17 @@ const NotificationManager = {
         }
     },
 
-    /**
-     * Request notification permission
-     */
+    //spørger om tilladelse til at sende notifikationer
     async requestPermission() {
         try {
             this.permission = await Notification.requestPermission();
 
-            // Handle permission result
             if (this.permission === 'granted') {
-                // Remove the permission button
                 const permissionBtn = document.getElementById('notification-permission-btn');
                 if (permissionBtn) {
                     permissionBtn.remove();
                 }
 
-                // Show success message
                 this.showStatusMessage('Notifications enabled!');
             } else {
                 this.showStatusMessage('Notification permission denied', true);
@@ -75,8 +55,8 @@ const NotificationManager = {
         }
     },
 
+    //viser notifikationerne
     async showNotification(title, body, options = {}) {
-        // Check permission
         if (this.permission !== 'granted') {
             const newPermission = await this.requestPermission();
             if (newPermission !== 'granted') {
@@ -84,7 +64,6 @@ const NotificationManager = {
             }
         }
 
-        // Default options
         const notificationOptions = {
             body: body,
             icon: '/icons/icon-192.png',
@@ -92,15 +71,12 @@ const NotificationManager = {
         };
 
         try {
-            // Create notification
             const notification = new Notification(title, notificationOptions);
 
-            // Add click handler
             notification.onclick = () => {
                 window.focus();
                 notification.close();
 
-                // Handle action if specified
                 if (options.action && typeof this.handleNotificationAction === 'function') {
                     this.handleNotificationAction(options.action);
                 }
@@ -113,8 +89,8 @@ const NotificationManager = {
         }
     },
 
+    //avancerede notifikationer, som anvender service workeren
     async showAdvancedNotification(title, body, actions = []) {
-        // Check permission
         if (this.permission !== 'granted') {
             const newPermission = await this.requestPermission();
             if (newPermission !== 'granted') {
@@ -123,16 +99,12 @@ const NotificationManager = {
         }
 
         try {
-            // Check for service worker support
             if (!('serviceWorker' in navigator)) {
-                // Fall back to basic notification
                 return this.showNotification(title, body);
             }
 
-            // Get service worker registration
             const registration = await navigator.serviceWorker.ready;
 
-            // Show notification with actions
             await registration.showNotification(title, {
                 body: body,
                 icon: '/icons/icon-192.png',
@@ -142,30 +114,24 @@ const NotificationManager = {
         } catch (error) {
             console.error('Error showing advanced notification:', error);
 
-            // Try falling back to basic notification
             return this.showNotification(title, body);
         }
     },
 
     scheduleNotification(title, body, delayMinutes = 5) {
-        // Validate delay
         if (isNaN(delayMinutes) || delayMinutes < 1) {
             this.showStatusMessage('Invalid delay time', true);
             return;
         }
 
-        // Convert to milliseconds
         const delayMs = delayMinutes * 60 * 1000;
 
-        // Set timeout
         const timerId = setTimeout(() => {
             this.showNotification(title, body);
         }, delayMs);
 
-        // Store timer ID for potential cancellation
         this.scheduledNotifications.push(timerId);
 
-        // Show confirmation
         this.showStatusMessage(`Notification scheduled for ${delayMinutes} minutes from now`);
 
         return timerId;
@@ -175,7 +141,6 @@ const NotificationManager = {
         switch (action) {
             case 'openSnippet':
                 if (data.snippetId) {
-                    // Call your app's function to load a snippet
                     if (typeof loadSnippet === 'function') {
                         loadSnippet(data.snippetId);
                     }
@@ -183,11 +148,9 @@ const NotificationManager = {
                 break;
 
             case 'newSnippet':
-                // Call your app's function to create a new snippet
                 if (typeof createNewSnippet === 'function') {
                     createNewSnippet();
                 } else {
-                    // Fallback - click the new snippet button
                     const newButton = document.getElementById('newSnippetBtn');
                     if (newButton) newButton.click();
                 }
@@ -199,17 +162,10 @@ const NotificationManager = {
         }
     },
 
-    /**
-     * Show status message to user
-     * @param {string} message - Message to show
-     * @param {boolean} isError - Whether this is an error message
-     */
     showStatusMessage(message, isError = false) {
-        // Use the app's status message function if available
         if (typeof showMessage === 'function') {
             showMessage(message, isError);
         } else {
-            // Simple alert fallback
             if (isError) {
                 console.error(message);
             } else {
@@ -218,6 +174,7 @@ const NotificationManager = {
         }
     },
 
+    //rydder planlagte notifikationer, kaldes når siden lukkes
     cleanup() {
         this.scheduledNotifications.forEach(timerId => {
             clearTimeout(timerId);
@@ -226,10 +183,8 @@ const NotificationManager = {
     }
 };
 
-// Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
     NotificationManager.init();
 });
 
-// Make it available globally
 window.NotificationManager = NotificationManager;

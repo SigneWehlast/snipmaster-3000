@@ -80,7 +80,6 @@ const SnippetUI = {
                 `;
             }).join('');
 
-            // Add event listeners
             this.addSnippetEventListeners();
         } catch (error) {
             console.error('Error displaying snippets:', error);
@@ -89,7 +88,6 @@ const SnippetUI = {
     },
 
     addSnippetEventListeners: function () {
-        // Snippet item click
         this.elements.snippetList.querySelectorAll('.snippet-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 if (!e.target.matches('.delete-btn') && !e.target.matches('.sync-item-btn')) {
@@ -99,7 +97,6 @@ const SnippetUI = {
             });
         });
 
-        // Delete button click
         this.elements.snippetList.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -108,7 +105,6 @@ const SnippetUI = {
             });
         });
 
-        // Sync item button click
         this.elements.snippetList.querySelectorAll('.sync-item-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -215,7 +211,6 @@ const SnippetUI = {
                     SyncUI.updateAppState(SyncUI.APP_STATES.SYNC_ERROR, 'Failed to sync snippet');
                 }
 
-                // Refresh the list
                 await SnippetUI.renderSnippets();
             } catch (error) {
                 console.error('Error syncing snippet:', error);
@@ -226,25 +221,21 @@ const SnippetUI = {
 };
 
 function initFileHandlers() {
-    // Check if the module is available
     if (!window.FileSystem) {
         console.error('FileSystem module not loaded');
         return;
     }
 
-    // Get button
     const loadFileBtn = document.getElementById('loadFileBtn');
     if (loadFileBtn) {
         loadFileBtn.addEventListener('click', handleLoadFile);
     }
 
-    // Show/hide button based on browser support
     if (!FileSystem.isSupported) {
         loadFileBtn.classList.add('disabled');
         loadFileBtn.title = 'Not supported in this browser';
     }
 }
-// Handler for load file button
 function handleLoadFile() {
         FileSystem.loadFromFile({
             onSuccess: (fileData) => {
@@ -263,7 +254,6 @@ function handleLoadFile() {
                         updatePreview();
                     }
     
-                    // Kald showMessage korrekt
                     SnippetUI.showMessage(`Loaded ${fileData.name} successfully!`);
                 }
             },
@@ -273,5 +263,4 @@ function handleLoadFile() {
         });
     }
     
-    // Call during initialization
     document.addEventListener('DOMContentLoaded', initFileHandlers);

@@ -1,32 +1,29 @@
+//bruges til at lagre snippets i IndexedDB
+
 const SnippetStorage = {
-    // Database configuration
+    // opsætter databasen
     dbConfig: {
         name: 'SnipMasterDB',
         version: 1,
         storeName: 'snippets'
     },
 
-    // Sync configuration
     syncConfig: {
         lastSyncTime: localStorage.getItem('lastSyncTime') || null,
         isSyncing: false,
-        syncEndpoint: '/api/sync' // Mock endpoint. No endpoint yet
+        syncEndpoint: '/api/sync' // Mock endpoint
     },
 
-    // Open database connection
     openDB: function () {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(this.dbConfig.name, this.dbConfig.version);
 
-            // Handle database upgrade/creation
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
 
-                // Create snippets object store if it doesn't exist
                 if (!db.objectStoreNames.contains(this.dbConfig.storeName)) {
                     const store = db.createObjectStore(this.dbConfig.storeName, { keyPath: 'id' });
 
-                    // Create useful indexes
                     store.createIndex('by-language', 'language', { unique: false });
                     store.createIndex('by-modified', 'lastModified', { unique: false });
                     store.createIndex('by-sync-status', 'syncStatus', { unique: false });
@@ -35,14 +32,12 @@ const SnippetStorage = {
                 }
             };
 
-            // Success handler
             request.onsuccess = (event) => {
                 const db = event.target.result;
                 console.log('Database opened successfully');
                 resolve(db);
             };
 
-            // Error handler
             request.onerror = (event) => {
                 console.error('Database error:', event.target.error);
                 reject('Error opening database');
@@ -50,7 +45,6 @@ const SnippetStorage = {
         });
     },
 
-    // Get all snippets
     getAll: async function () {
         const db = await this.openDB();
         return new Promise((resolve, reject) => {
@@ -63,7 +57,6 @@ const SnippetStorage = {
         });
     },
 
-    // Get a single snippet by ID
     getById: async function (id) {
         const db = await this.openDB();
         return new Promise((resolve, reject) => {
@@ -76,9 +69,7 @@ const SnippetStorage = {
         });
     },
 
-    // Save a snippet (create or update)
     save: async function (snippet, setPending = true) {
-        // Ensure snippet has required fields
         if (!snippet.id) {
             snippet.id = Date.now().toString();
         }
@@ -88,7 +79,6 @@ const SnippetStorage = {
 
         snippet.lastModified = new Date().toISOString();
 
-        // Only set as pending if not already synced and setPending is true
         if (setPending && snippet.syncStatus !== 'synced') {
             snippet.syncStatus = 'pending';
         }
@@ -104,7 +94,6 @@ const SnippetStorage = {
         });
     },
 
-    // Delete a snippet
     delete: async function (id) {
     const db = await this.openDB();
     return new Promise((resolve, reject) => {
@@ -115,14 +104,12 @@ const SnippetStorage = {
         request.onsuccess = async () => {
             console.log(`Snippet ${id} deleted from IndexedDB`);
 
-            // Opdater localStorage 'snippets' array - fjern slettet snippet
             try {
                 let snippets = JSON.parse(localStorage.getItem('snippets') || '[]');
                 snippets = snippets.filter(snip => snip.id !== id);
                 localStorage.setItem('snippets', JSON.stringify(snippets));
                 console.log('localStorage snippets updated');
 
-                // Opdater UI med ny snippet liste - du skal implementere denne funktion
                 if (typeof this.renderSnippetList === 'function') {
                     this.renderSnippetList(snippets);
                 }
@@ -130,7 +117,6 @@ const SnippetStorage = {
                 console.warn('Failed to update localStorage snippets:', e);
             }
 
-            // Slet alle cache entries (som før)
             try {
                 const cache = await caches.open('snipmaster-snippets-v1');
                 const requests = await cache.keys();
@@ -150,10 +136,6 @@ const SnippetStorage = {
     });
 },
 
-
-
-
-    // Get snippets by language
     getByLanguage: async function (language) {
         const db = await this.openDB();
         return new Promise((resolve, reject) => {
@@ -167,7 +149,6 @@ const SnippetStorage = {
         });
     },
 
-    // Get all pending snippets
     getPendingSync: async function () {
         const db = await this.openDB();
         return new Promise((resolve, reject) => {
@@ -181,31 +162,26 @@ const SnippetStorage = {
         });
     },
 
-    // Mark snippet as synced
     markAsSynced: async function (id) {
         const snippet = await this.getById(id);
         if (snippet) {
             snippet.syncStatus = 'synced';
-            return this.save(snippet, false); // Pass false to avoid setting pending status again
+            return this.save(snippet, false); 
         }
     },
 
-    // Migrate data from localStorage
     migrateFromLocalStorage: async function () {
-        // Check if migration has been done
         if (localStorage.getItem('dbMigrationDone')) {
             console.log('Migration already completed');
             return;
         }
 
         try {
-            // Get snippets from localStorage
             const localSnippets = JSON.parse(localStorage.getItem('snippets') || '[]');
 
             if (localSnippets.length > 0) {
                 console.log(`Migrating ${localSnippets.length} snippets to IndexedDB...`);
 
-                // Save each snippet to IndexedDB
                 for (const snippet of localSnippets) {
                     await this.save(snippet);
                 }
@@ -215,7 +191,6 @@ const SnippetStorage = {
                 console.log('No snippets to migrate');
             }
 
-            // Mark migration as done
             localStorage.setItem('dbMigrationDone', 'true');
 
         } catch (error) {
@@ -223,19 +198,15 @@ const SnippetStorage = {
         }
     },
 
-    // Sync a single snippet
     syncSingleSnippet: async function (id) {
         try {
-            // Get the snippet
             const snippet = await this.getById(id);
             if (!snippet || snippet.syncStatus !== 'pending') {
                 return { success: false, message: 'Nothing to sync' };
             }
 
-            // Send to server
             await this.syncWithServer(snippet);
 
-            // Mark as synced
             await this.markAsSynced(snippet.id);
             return { success: true };
         } catch (error) {
@@ -244,15 +215,12 @@ const SnippetStorage = {
         }
     },
 
-    // Sync all pending snippets
     syncAll: async function () {
-        // Prevent multiple simultaneous syncs
         if (this.syncConfig.isSyncing) {
             return { success: false, message: 'Sync already in progress' };
         }
 
         this.syncConfig.isSyncing = true;
-        // Notify sync started
         document.dispatchEvent(new CustomEvent('sync-status-change', {
             detail: { status: 'syncing', message: 'Starting sync...' }
         }));
@@ -261,7 +229,6 @@ const SnippetStorage = {
             const pendingSnippets = await this.getPendingSync();
 
             if (pendingSnippets.length === 0) {
-                // Notify nothing to sync
                 document.dispatchEvent(new CustomEvent('sync-status-change', {
                     detail: { status: 'sync-success', message: 'Nothing to sync' }
                 }));
@@ -274,15 +241,9 @@ const SnippetStorage = {
 
             for (const snippet of pendingSnippets) {
                 try {
-                    // Send to server
                     await this.syncWithServer(snippet);
-
-                    // Mark as synced
                     await this.markAsSynced(snippet.id);
-
                     successCount++;
-
-                    // Update UI with progress
                     document.dispatchEvent(new CustomEvent('sync-status-change', {
                         detail: {
                             status: 'syncing',
@@ -295,13 +256,9 @@ const SnippetStorage = {
                     errorCount++;
                 }
             }
-
-            // Update last sync time
             if (successCount > 0) {
                 this.updateLastSyncTime();
             }
-
-            // Notify sync completed
             if (errorCount === 0) {
                 document.dispatchEvent(new CustomEvent('sync-status-change', {
                     detail: {
@@ -330,30 +287,24 @@ const SnippetStorage = {
         }
     },
 
-    // Update last sync time
     updateLastSyncTime: function () {
         this.syncConfig.lastSyncTime = new Date().toISOString();
         localStorage.setItem('lastSyncTime', this.syncConfig.lastSyncTime);
-
-        // Notify any open tabs about the sync (for multi-tab support)
         try {
             localStorage.setItem('syncEvent', Date.now().toString());
         } catch (e) {
             console.error('Failed to notify other tabs about sync:', e);
         }
 
-        // Dispatch event for last sync time update
         document.dispatchEvent(new CustomEvent('last-sync-updated', {
             detail: { time: this.syncConfig.lastSyncTime }
         }));
     },
 
-    // Get last sync time
     getLastSyncTime: function () {
         return this.syncConfig.lastSyncTime;
     },
 
-    // Register for background sync
     registerBackgroundSync: async function () {
         if ('serviceWorker' in navigator && 'SyncManager' in window) {
             try {
@@ -369,9 +320,7 @@ const SnippetStorage = {
         return false;
     },
 
-    // Simulate sync with server (for mock purposes)
     syncWithServer: async function (snippet) {
-        // Simulate API call
         return new Promise((resolve, reject) => {
             setTimeout(() => {
                 if (Math.random() < 0.9) {

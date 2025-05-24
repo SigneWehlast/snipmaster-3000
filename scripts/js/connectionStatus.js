@@ -1,33 +1,16 @@
-/**
- * Connection Status Module
- * 
- * This module handles the display of the application's online/offline status.
- * It provides visual feedback to users about their connection state and
- * automatically updates when the connection status changes.
- */
-
-export class ConnectionStatus {
-    /**
-     * Creates a new ConnectionStatus instance
-     * Initializes the status display and sets up event listeners
-     */
+ export class ConnectionStatus {
+    //køres når der lavet et nyt objekt til class
     constructor() {
         this.statusElement = document.getElementById('connection-status');
+        //lytter på ændringer i nerværket
         this.setupEventListeners();
+        //ændrer ui i forhold til om online eller offline
         this.updateStatus();
     }
-
-    /**
-     * Sets up event listeners for online/offline events
-     */
     setupEventListeners() {
         window.addEventListener('online', () => this.updateStatus());
         window.addEventListener('offline', () => this.updateStatus());
     }
-
-    /**
-     * Updates the visual status indicator based on connection state
-     */
     updateStatus() {
         if (!this.statusElement) return;
         

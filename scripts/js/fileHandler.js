@@ -1,28 +1,11 @@
-/**
- * File Handling Module
- * 
- * This module handles file operations in the application:
- * - Opening files through the File System Access API
- * - Detecting programming languages from file extensions
- * - Creating snippets from file contents
- * - Providing user feedback for file operations
- */
-
 export class FileHandler {
-    /**
-     * Creates a new FileHandler instance
-     * @param {CodePreview} codePreview - The CodePreview instance for updating the preview
-     */
     constructor(codePreview) {
+        //når en fil åbnes, kan den ses i codepreview
         this.codePreview = codePreview;
         this.setupFileHandling();
     }
-
-    /**
-     * Sets up file handling using the File System Access API
-     * Configures the launch queue for handling files opened with the app
-     */
     setupFileHandling() {
+        //gør det muligt for PWA'er at åbne filer direkte
         if ('launchQueue' in window) {
             window.launchQueue.setConsumer(async (launchParams) => {
                 if (!Array.isArray(launchParams.files) || launchParams.files.length === 0) {
@@ -48,12 +31,7 @@ export class FileHandler {
             });
         }
     }
-
-    /**
-     * Detects the programming language from a file extension
-     * @param {string} filename - The name of the file
-     * @returns {string} The detected programming language
-     */
+    //vælger hvilket sprog, der bruges
     detectLanguage(filename) {
         const extension = filename.split('.').pop().toLowerCase();
         const extensionMap = {
@@ -77,13 +55,7 @@ export class FileHandler {
         return extensionMap[extension] || 'plaintext';
     }
 
-    /**
-     * Creates a new snippet from a file's contents
-     * @param {Object} params - The parameters for creating the snippet
-     * @param {string} params.name - The name of the file
-     * @param {string} params.language - The programming language
-     * @param {string} params.code - The file contents
-     */
+    //sætter indholdet i et inputfelt, prøver at finde det rigtige sprog
     createSnippetFromFile({ name, language, code }) {
         const codeEditor = document.getElementById('codeEditor');
         const languageSelect = document.getElementById('languageSelect');
@@ -102,11 +74,6 @@ export class FileHandler {
             this.showMessage(`📂 Opened file: ${name}`);
         }
     }
-
-    /**
-     * Shows a temporary status message
-     * @param {string} text - The message to display
-     */
     showMessage(text) {
         const message = document.createElement('div');
         message.className = 'status-message';
@@ -115,10 +82,6 @@ export class FileHandler {
         setTimeout(() => message.remove(), 2000);
     }
 
-    /**
-     * Shows an error message
-     * @param {string} message - The error message to display
-     */
     showError(message) {
         const errorMsg = document.createElement('div');
         errorMsg.className = 'status-message error';
