@@ -2,7 +2,7 @@
 const STATIC_CACHE = 'snipmaster-static-v1';
 //dynamisk cachelagring. Bruges til sider der ikke installeres
 const DYNAMIC_CACHE = 'snipmaster-dynamic-v1';
-//bruges til at gemme snippets
+//bruges til at gemme API svar
 const SNIPPETS_CACHE = 'snipmaster-snippets-v1';
 
 //liste over filer, som skal køres ved installation. De skal kunne køre offline
